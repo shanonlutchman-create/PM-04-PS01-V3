@@ -4,6 +4,7 @@
   "description": "SECTION 1: PM-04-PS01: Identify the process and objects from the process design document (PDD) pertaining to the software RPA solution",
   "main": "Main.xaml",
   "dependencies": {
+    "UiPath.Mail.Activities": "[2.7.10]",
     "UiPath.System.Activities": "[26.2.1]"
   },
   "webServices": [],

@@ -1,0 +1,23 @@
+Simplified Process Design Document (PDD) Diagram
+This diagram provides a high-level, visual overview of the Mzansi Mart automation process.
+
+graph TD
+    A[Start: Monitor Inbox for Orders] --> B{Email with "New Mzansi Mart Order"?};
+    B -- Yes --> C[Download CSV Attachment];
+    B -- No --> A;
+    C --> D[Read Data from CSV];
+    D --> E{For each Row};
+    E -- Yes --> F[Log In to Web System];
+    F --> G[Navigate to "New Order" Page];
+    G --> H[Enter Customer and Order Data];
+    H --> I[Click "Add Item"];
+    I --> H;
+    H --> J[Click "Submit Order"];
+    J --> K[Capture Confirmation Number];
+    K --> L[Send Confirmation Email];
+    E -- No --> M[End: Process Complete];
+    J -- Failure --> N[Error Handling: Log and Alert];
+    N --> A;
+    L --> A;
+    F -- Failure --> N;
+    H -- Failure --> N;

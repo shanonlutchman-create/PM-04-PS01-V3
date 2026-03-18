@@ -1,0 +1,12 @@
+﻿{
+  "Name": "Edge Lovable App",
+  "Type": "App",
+  "Id": "iff8O7YgKESJiSptHDmlkg",
+  "Reference": "jkngBTA8aEOU1S3jvIyrpQ/iff8O7YgKESJiSptHDmlkg",
+  "Created": "2026-03-18T15:12:58.789688Z",
+  "Updated": "2026-03-18T15:12:58.789688Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=25.10.28.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=25.12.1.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

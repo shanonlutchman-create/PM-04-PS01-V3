@@ -1,0 +1,13 @@
+﻿{
+  "Name": "Edge Lovable App",
+  "Type": "Screen",
+  "Id": "ANhAnh_rhEOapH-ZfDW1AQ",
+  "Reference": "jkngBTA8aEOU1S3jvIyrpQ/ANhAnh_rhEOapH-ZfDW1AQ",
+  "ParentRef": "jkngBTA8aEOU1S3jvIyrpQ/P_zMXomv9k6_dtoKJM5YLA",
+  "Created": "2026-03-18T15:12:58.9660423Z",
+  "Updated": "2026-03-18T15:12:58.9660423Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=25.10.28.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=25.12.1.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

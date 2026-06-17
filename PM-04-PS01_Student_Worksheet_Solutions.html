@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>PM-04-PS01 Student Worksheet Solutions</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; margin: 2cm 2.5cm; color: #000; line-height: 1.5; }
+  h1 { font-size: 18pt; color: #002060; border-bottom: 3px solid #002060; padding-bottom: 6px; margin-top: 30px; }
+  h2 { font-size: 14pt; color: #1F3864; border-bottom: 1px solid #BDD7EE; padding-bottom: 4px; margin-top: 24px; }
+  h3 { font-size: 12pt; color: #2E75B6; margin-top: 18px; }
+  p { margin: 8px 0; text-align: justify; }
+  ul { margin: 6px 0 10px 20px; }
+  ol { margin: 6px 0 10px 20px; }
+  li { margin-bottom: 5px; }
+  pre, code { font-family: "Courier New", monospace; font-size: 9pt; background: #F4F4F4; border-left: 4px solid #2E75B6; padding: 10px 14px; display: block; white-space: pre-wrap; color: #003300; margin: 10px 0; border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th { background-color: #002060; color: #ffffff; padding: 8px 10px; text-align: left; }
+  td { border: 1px solid #BDD7EE; padding: 7px 10px; vertical-align: top; }
+  tr:nth-child(even) td { background-color: #EBF3FB; }
+  .cover { text-align: center; padding: 60px 0; border-bottom: 2px solid #002060; margin-bottom: 40px; }
+  .cover h1 { font-size: 28pt; border: none; }
+  .cover h2 { font-size: 18pt; border: none; color: #1F3864; }
+  .cover p { font-size: 12pt; }
+  .note-box { background: #FFF3CD; border-left: 4px solid #FFC107; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+  .selected { color: #00AA00; font-weight: bold; }
+  .page-break { page-break-before: always; }
+  .kb-box { background: #EEF2FF; border-left: 4px solid #4A235A; padding: 10px 14px; margin: 10px 0; font-family: "Courier New", monospace; font-size: 9pt; white-space: pre-wrap; }
+  .section-label { display: inline-block; background: #002060; color: #fff; font-weight: bold; padding: 3px 10px; border-radius: 3px; font-size: 10pt; margin-bottom: 8px; }
+  footer-note { font-size: 9pt; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<!-- ===================== COVER PAGE ===================== -->
+<div class="cover">
+  <h1>PM-04-PS01</h1>
+  <h2>Student Worksheet – Solutions</h2>
+  <p><strong>Module:</strong> Identify the Process and Objects from the PDD</p>
+  <p><strong>Project:</strong> Mzansi Mart Order Processing Automation</p>
+  <p><strong>RPA Tool Selected:</strong> UiPath Studio (Community Edition)</p>
+  <p><strong>Student Name:</strong> Shanon Lutchman</p>
+  <p><strong>Date:</strong> June 2026</p>
+</div>
+
+<!-- ===================== TASK 1 ===================== -->
+<div class="page-break"></div>
+<div class="section-label">TASK 1</div>
+<h1>Task 1: PDD Analysis and Tool Selection</h1>
+<p>
+  This section addresses Task 1 of the practical assessment, covering PDD analysis (PA0104),
+  tool selection (PA0103), and workflow design (AK0103) for the Mzansi Mart Order Processing
+  Automation project.
+</p>
+
+<!-- PA0104 -->
+<h2>PA0104 – PDD Analysis: Breaking Down the Process</h2>
+<p>
+  The Mzansi Mart automation is broken down into five smaller, modular sub-processes, each
+  implemented as a separate reusable workflow file (<code>.xaml</code>) in UiPath Studio. These
+  sub-processes are orchestrated by a central <code>Main.xaml</code> entry-point. This modular
+  design improves maintainability, simplifies debugging, enables unit testing of each component
+  independently, and allows individual steps to be reused in future automations.
+</p>
+
+<h3>Sub-Process 1 – Email Monitor &amp; Trigger (1_MonitorEmail.xaml)</h3>
+<p>
+  This sub-process continuously polls the <strong>orders@mzansimart.co.za</strong> IMAP mailbox
+  using the <em>Get IMAP Mail Messages</em> activity. It filters for unread emails with a subject
+  line containing <strong>"New Mzansi Mart Order"</strong>. When a qualifying email is found, it
+  uses the <em>Save Mail Attachments</em> activity to download the CSV file to a local staging
+  folder (e.g., <code>C:\MzansiMart\Inbox\</code>). The sub-process outputs the local file path
+  of the saved CSV file back to <code>Main.xaml</code> for the next step.
+</p>
+
+<h3>Sub-Process 2 – Data Extraction &amp; Validation (2_ExtractValidate.xaml)</h3>
+<p>
+  This sub-process reads the CSV file using the <em>Read CSV</em> activity into a
+  <code>DataTable</code> variable (<code>dt_Applications</code>). It then iterates over every row
+  using a <em>For Each Row in Data Table</em> activity. For each row it:
+</p>
+<ul>
+  <li>Validates that <code>customer_id</code> is exactly 8 numeric digits.</li>
+  <li>Validates that <code>quantity</code> is non-empty and greater than zero.</li>
+  <li>Separates rows into <code>dt_ValidOrders</code> and <code>dt_InvalidOrders</code> DataTables.</li>
+</ul>
+<p>
+  Invalid rows are logged with a WARNING and included in the support team alert email — they are
+  never submitted to the OMS. This prevents garbage data from polluting the order system.
+</p>
+
+<h3>Sub-Process 3 – Web Application Login (3_LoginOMS.xaml)</h3>
+<p>
+  This sub-process opens Chrome using the <em>Open Browser</em> activity and navigates to
+  <strong>https://orders.mzansimart.co.za</strong>. It retrieves the username and password
+  securely from a UiPath Orchestrator Credential Asset using the <em>Get Credential</em> activity
+  (no hardcoded passwords). It types the credentials into the login form fields using
+  <em>Type Into</em> and clicks the <strong>Log In</strong> button using the <em>Click</em>
+  activity. The entire login sequence is wrapped in a <code>Try/Catch</code> block to handle login
+  failures and network timeouts gracefully.
+</p>
+
+<h3>Sub-Process 4 – Order Entry Loop (4_ProcessOrders.xaml)</h3>
+<p>
+  This is the core business logic sub-process. For each row in <code>dt_ValidOrders</code>:
+</p>
+<ol>
+  <li>Navigate to the "New Order" page in the OMS.</li>
+  <li>Type <code>customer_id</code>, <code>product_sku</code>, and <code>quantity</code> into the
+      corresponding form fields using <em>Type Into</em>.</li>
+  <li>Click the <strong>Add Item</strong> button.</li>
+  <li>Click the <strong>Submit Order</strong> button.</li>
+  <li>Use <em>Get Text</em> to capture the Order Confirmation Number displayed on screen.</li>
+  <li>Pass the confirmation number to Sub-Process 5.</li>
+</ol>
+
+<h3>Sub-Process 5 – Confirmation &amp; Notification (5_SendConfirmation.xaml)</h3>
+<p>
+  After each successful order submission, this sub-process sends a confirmation email to the
+  customer using the <em>Send SMTP Mail Message</em> activity. The email uses the customer's
+  email address from the CSV data, with the subject
+  <strong>"Your Mzansi Mart Order is Confirmed"</strong> and includes the Order Confirmation
+  Number in the body.
+</p>
+
+<h3>Error Handling – Cross-Cutting Concern (ErrorHandler.xaml)</h3>
+<p>
+  A <strong>Global Exception Handler</strong> is configured in UiPath Studio and every sub-process
+  is wrapped in a <code>Try/Catch/Finally</code> block. On any unhandled exception, the bot:
+</p>
+<ul>
+  <li>Logs the error to UiPath Orchestrator using <em>Log Message</em> (Error level).</li>
+  <li>Sends an alert email to <strong>rpa-support@mzansimart.co.za</strong> with the full error
+      details.</li>
+  <li>Uses the <code>Finally</code> block to close the browser and release resources.</li>
+</ul>
+
+<h3>Logic and Flow Summary</h3>
+<pre>
+START
+  │
+  ▼
+[1] Monitor Inbox → Email with "New Mzansi Mart Order" found?
+  │                    NO → keep polling
+  │ YES
+  ▼
+[2] Download CSV Attachment → Save to C:\MzansiMart\Inbox\
+  │
+  ▼
+[3] Read CSV → DataTable (dt_Applications)
+  │
+  ▼
+[4] For Each Row → Validate customer_id AND quantity
+  │    ├── INVALID → Log Warning, add to dt_InvalidOrders, skip row
+  │    └── VALID   → add to dt_ValidOrders
+  │
+  ▼
+[5] Login to OMS (from Orchestrator Credential Asset)
+  │
+  ▼
+[6] For Each Row in dt_ValidOrders:
+  │   ├── Navigate to New Order Page
+  │   ├── Enter customer_id, product_sku, quantity
+  │   ├── Click "Add Item"
+  │   ├── Click "Submit Order"
+  │   ├── Capture Confirmation Number
+  │   └── Send Confirmation Email to Customer
+  │
+  ▼
+[7] Archive CSV to C:\MzansiMart\Processed\
+  │
+  ▼
+END
+
+ON ANY FAILURE → Log Error → Send Alert Email to RPA Support Team
+</pre>
+
+
+<!-- PA0103 -->
+<h2>PA0103 – RPA Tool Selection and Justification: UiPath</h2>
+<p>
+  After evaluating all six approved RPA tools, <strong>UiPath Studio Community Edition</strong>
+  is selected for the Mzansi Mart project. The justification is detailed below:
+</p>
+
+<table>
+  <tr>
+    <th>Factor</th>
+    <th>UiPath Justification</th>
+  </tr>
+  <tr>
+    <td><strong>Web Application Integration</strong></td>
+    <td>UiPath provides the <em>UiPath.WebBrowser.Activities</em> package with native support for
+        Chrome and Edge. Its modern selector engine (Classic + UI Automation + Computer Vision)
+        reliably locates and interacts with web elements in the OMS portal — critical for this
+        project.</td>
+  </tr>
+  <tr>
+    <td><strong>Email Automation</strong></td>
+    <td>The <em>UiPath.Mail.Activities</em> package supports IMAP, POP3, SMTP and Exchange/Outlook
+        natively. The <em>Get IMAP Mail Messages</em> and <em>Save Mail Attachments</em> activities
+        map directly to PDD requirements with no custom coding needed.</td>
+  </tr>
+  <tr>
+    <td><strong>Data Handling (CSV)</strong></td>
+    <td>The <em>Read CSV</em> activity reads CSV files directly into a DataTable variable. This
+        is built-in to <em>UiPath.System.Activities</em> — no third-party library or scripting
+        required.</td>
+  </tr>
+  <tr>
+    <td><strong>Secure Credential Management</strong></td>
+    <td>UiPath Orchestrator's <strong>Assets</strong> feature stores credentials encrypted at rest.
+        The <em>Get Credential</em> activity retrieves them at runtime. Passwords are never
+        hardcoded or stored in workflow files.</td>
+  </tr>
+  <tr>
+    <td><strong>Cost</strong></td>
+    <td>UiPath <strong>Community Edition is free</strong> for individuals and small businesses.
+        Automation Anywhere and Blue Prism require expensive enterprise licences, making UiPath
+        ideal for a growing South African SME like Mzansi Mart.</td>
+  </tr>
+  <tr>
+    <td><strong>South African Community</strong></td>
+    <td>UiPath has active South African user groups in Johannesburg and Cape Town, free courses on
+        UiPath Academy (English), and a large community forum with local contributors.</td>
+  </tr>
+  <tr>
+    <td><strong>Ease of Development</strong></td>
+    <td>UiPath Studio's drag-and-drop low-code designer significantly reduces development time
+        compared to code-heavy tools like Blue Prism, enabling faster delivery for Mzansi Mart.
+        </td>
+  </tr>
+  <tr>
+    <td><strong>Scalability</strong></td>
+    <td>UiPath Orchestrator enables scheduling, monitoring, and scaling to multiple robots as
+        order volumes grow — without any architectural redesign of the solution.</td>
+  </tr>
+</table>
+
+<h3>Tool Comparison Table</h3>
+<table>
+  <tr>
+    <th>RPA Tool</th>
+    <th>Key Consideration</th>
+    <th>Verdict</th>
+  </tr>
+  <tr>
+    <td><strong>UiPath</strong></td>
+    <td>Free Community Edition, web-ready, strong community, built-in Orchestrator</td>
+    <td class="selected">✅ SELECTED</td>
+  </tr>
+  <tr>
+    <td>Automation Anywhere</td>
+    <td>Powerful but requires expensive enterprise licensing; limited free tier</td>
+    <td>❌ Too costly for Mzansi Mart</td>
+  </tr>
+  <tr>
+    <td>Blue Prism</td>
+    <td>Enterprise-grade, steep learning curve, no free Community Edition</td>
+    <td>❌ Not suitable</td>
+  </tr>
+  <tr>
+    <td>Microsoft Power Automate</td>
+    <td>Excellent for M365 integration but limited advanced web scraping capability</td>
+    <td>⚠️ Limited web automation</td>
+  </tr>
+  <tr>
+    <td>Kofax RPA</td>
+    <td>Expensive, complex setup, very small South African support community</td>
+    <td>❌ Not suitable</td>
+  </tr>
+  <tr>
+    <td>WorkFusion</td>
+    <td>AI-focused, complex setup, limited community, enterprise pricing</td>
+    <td>❌ Not suitable</td>
+  </tr>
+</table>
+
+
+<!-- AK0103 -->
+<h2>AK0103 – Workflow Diagram in UiPath</h2>
+<p>
+  The UiPath solution is structured as a <strong>Main Sequence</strong> in
+  <code>Main.xaml</code> that calls five <em>Invoke Workflow File</em> activities. Each invoked
+  file is an independent, reusable sub-process. The structure below represents the workflow
+  diagram as implemented in UiPath Studio:
+</p>
+<pre>
+MAIN.XAML  (Entry Point — Sequence)
+│
+├── Try (Global Error Handler)
+│   │
+│   ├── [1] Invoke Workflow: 1_MonitorEmail.xaml
+│   │       IN:  MailCredentialAsset (String)
+│   │       OUT: csvFilePath (String)
+│   │
+│   ├── [2] Invoke Workflow: 2_ExtractValidate.xaml
+│   │       IN:  csvFilePath (String)
+│   │       OUT: dt_ValidOrders (DataTable)
+│   │            dt_InvalidOrders (DataTable)
+│   │
+│   ├── [3] Invoke Workflow: 3_LoginOMS.xaml
+│   │       IN:  OMSCredentialAsset (String)
+│   │       OUT: (Browser session remains open)
+│   │
+│   ├── [4] For Each Row in dt_ValidOrders  ─────────────────────┐
+│   │       │                                                     │
+│   │       ├── [4a] Invoke Workflow: 4_ProcessOrders.xaml       │
+│   │       │         IN:  currentRow (DataRow)                  │
+│   │       │         OUT: confirmationNumber (String)           │
+│   │       │                                                     │
+│   │       └── [4b] Invoke Workflow: 5_SendConfirmation.xaml   │
+│   │                 IN:  customerEmail (String)                │
+│   │                      confirmationNumber (String)           │
+│   │                                                     ◄──────┘
+│   ├── [5] Close Browser
+│   │
+│   └── [6] Move CSV to Processed folder
+│
+└── Catch (System.Exception)
+        Invoke Workflow: ErrorHandler.xaml
+        IN:  exceptionMessage (String), orderRowData (String)
+</pre>
+
+<div class="note-box">
+  <strong>📌 Note on Workflow Diagram:</strong> In UiPath Studio, the above structure is
+  visualised using a <em>Flowchart</em> for the Main.xaml and
+  <em>Sequences</em> for each sub-process. Decision diamonds (If activities) handle the
+  validation branching. The <em>Invoke Workflow File</em> activity passes data between
+  workflows via In/Out Arguments.
+</div>
+
+
+<!-- ===================== TASK 2 ===================== -->
+<div class="page-break"></div>
+<div class="section-label">TASK 2</div>
+<h1>Task 2: Solution Development and Problem-Solving</h1>
+
+
+<!-- AK0101 -->
+<h2>AK0101 – Scripting: customer_id Validation Code Snippet</h2>
+<p>
+  The following UiPath VB.NET code is used inside a <em>For Each Row in Data Table</em> activity
+  in <code>2_ExtractValidate.xaml</code>. It validates that each <code>customer_id</code> is
+  exactly <strong>8 numeric digits</strong> as specified in the PDD.
+</p>
+<div class="note-box">
+  <strong>📋 Dataset Insight:</strong> In <em>Sample Orders Batch 2</em>, Order 1010 has
+  <code>customer_id = "5555555"</code> — only 7 digits. This code correctly identifies and
+  flags it as invalid, preventing a bad order from being submitted.
+</div>
+
+<pre>
+' ================================================================
+' UiPath VB.NET — customer_id Validation Logic
+' Location: 2_ExtractValidate.xaml — inside For Each Row loop
+' ================================================================
+
+' Step 1: Extract customer_id safely (handle nulls)
+Dim strCustomerId As String = If(
+    row("customer_id") Is Nothing,
+    "",
+    row("customer_id").ToString().Trim()
+)
+
+' Step 2: Extract order_id for logging context
+Dim strOrderId As String = If(
+    row("order_id") Is Nothing,
+    "UNKNOWN",
+    row("order_id").ToString().Trim()
+)
+
+' Step 3: Apply validation rule
+'   Rule: customer_id must be EXACTLY 8 characters AND all characters must be digits
+Dim isValidCustomerId As Boolean = (
+    strCustomerId.Length = 8 AndAlso
+    strCustomerId.All(Function(c) Char.IsDigit(c))
+)
+
+' Step 4: Branch on validation result
+If isValidCustomerId Then
+    ' ✅ VALID — add to the processing DataTable
+    dt_ValidOrders.ImportRow(row)
+    Log.Info("[VALID] Order " &amp; strOrderId &amp; " | customer_id: " &amp; strCustomerId)
+Else
+    ' ❌ INVALID — add to the error DataTable and log a warning
+    dt_InvalidOrders.ImportRow(row)
+    Log.Warn("[INVALID] Order " &amp; strOrderId &amp;
+             " | customer_id '" &amp; strCustomerId &amp;
+             "' is not exactly 8 digits. Row skipped.")
+
+    ' Append to error summary for the support team alert email
+    strErrorLog = strErrorLog &amp;
+        "Order " &amp; strOrderId &amp;
+        ": Invalid customer_id '" &amp; strCustomerId &amp; "'" &amp;
+        Environment.NewLine
+End If
+
+' ================================================================
+' Test Results against Batch 2 Data:
+'   Order 1010 → customer_id = "5555555" (7 digits)
+'   → Length = 7 ≠ 8 → isValidCustomerId = False → SKIPPED ✅
+' ================================================================
+</pre>
+
+
+<!-- PA0106 -->
+<h2>PA0106 – Problem-Solving: 'Submit Order' Button HTML id Change</h2>
+<p>
+  If the HTML <code>id</code> attribute of the "Submit Order" button changes (e.g., from
+  <code>id="submitBtn"</code> to <code>id="btn-submit-v2"</code>), a UiPath selector based
+  solely on <code>id</code> will throw a <strong>SelectorNotFoundException</strong>. Two
+  robust approaches are implemented to prevent this from breaking the automation:
+</p>
+
+<h3>Approach 1: Resilient Multi-Attribute Selectors (Primary Strategy)</h3>
+<p>
+  The UiPath selector is redesigned to avoid relying on the unstable <code>id</code> attribute.
+  Instead, it uses attributes that are <strong>semantically stable</strong> — meaning they are
+  tied to the button's visible purpose rather than a dynamically generated ID.
+</p>
+<p><strong>Updated Selector (in UiPath Selector Editor):</strong></p>
+<pre>
+&lt;!-- Primary: Match by visible button text (innertext) --&gt;
+&lt;webctrl tag='BUTTON' innertext='Submit Order' /&gt;
+
+&lt;!-- Secondary: Match by accessible name (aaname) and CSS class --&gt;
+&lt;webctrl tag='BUTTON' aaname='Submit Order' class='btn-primary' /&gt;
+
+&lt;!-- Tertiary: Match by input type and value (for older form designs) --&gt;
+&lt;webctrl tag='INPUT' type='submit' value='Submit Order' /&gt;
+</pre>
+<p>
+  In the UiPath <strong>Selector Editor</strong>, the <code>id</code> attribute checkbox is
+  <em>unchecked</em>, and the <code>innertext</code> or <code>aaname</code> attribute is used
+  instead. The button's visible label ("Submit Order") is far less likely to change across
+  deployments than a generated ID. Additionally, the <strong>Anchor Base</strong> activity can
+  be used with a nearby stable element (e.g., the "Order Total" label) as the anchor, making
+  the selector context-aware.
+</p>
+
+<h3>Approach 2: Computer Vision (CV) Click as Fallback (Secondary Strategy)</h3>
+<p>
+  As an additional safety net, UiPath's <strong>Computer Vision (CV)</strong> activities are
+  used as a fallback when the standard selector fails. CV identifies UI elements by their
+  <em>visual appearance</em> on screen, completely independent of HTML structure or attributes.
+</p>
+<p><strong>Implementation in the workflow:</strong></p>
+<pre>
+Try
+    ' PRIMARY: Click using text-based selector (no id dependency)
+    Click("&lt;webctrl tag='BUTTON' innertext='Submit Order'/&gt;")
+
+Catch ex As SelectorNotFoundException
+    ' FALLBACK: Use Computer Vision to find button visually
+    CV Screen Scope
+        CV Click "Submit Order"  ' Matches by visual model / text OCR
+
+    ' Alert the RPA team that the selector needs updating
+    Log.Warn("Submit Order selector may have changed. CV fallback was used. " &amp;
+             "Please review and update the selector. Error: " &amp; ex.Message)
+
+    ' Send maintenance alert email to RPA support
+    Send Alert Email to rpa-support@mzansimart.co.za
+        Subject: "⚠️ UiPath Bot - Selector Change Detected on OMS"
+        Body: "The Submit Order button selector triggered a fallback at: " &amp; DateTime.Now
+End Try
+</pre>
+<p>
+  This two-layer approach ensures the automation <strong>self-heals in the short term</strong>
+  (via CV fallback) while alerting the team to perform a permanent selector update, preventing
+  silent failures from accumulating.
+</p>
+
+
+<!-- PA0105 -->
+<h2>PA0105 – Attention to Detail: Handling Empty Quantity Field</h2>
+<p>
+  The <em>Sample Orders Batch 2</em> dataset confirms two quantity-related data quality issues:
+</p>
+<ul>
+  <li><strong>Order 1008:</strong> <code>quantity = 0</code> (zero — invalid business value)</li>
+  <li><strong>Order 1009:</strong> <code>quantity</code> field is <em>blank/empty</em></li>
+</ul>
+<p>
+  Without handling, passing an empty string or zero into the OMS quantity field would either
+  cause a runtime crash or submit an invalid order. The following step-by-step logic is
+  implemented inside the <em>For Each Row</em> loop in <code>2_ExtractValidate.xaml</code>:
+</p>
+
+<ol>
+  <li>
+    <strong>Extract Quantity as String:</strong> Read the raw value from the DataTable row,
+    converting <code>Nothing</code> to an empty string:
+    <code>Dim strQuantity As String = If(row("quantity") Is Nothing, "", row("quantity").ToString().Trim())</code>
+  </li>
+  <li>
+    <strong>Check for Empty / Null:</strong> Use an <em>If</em> activity to evaluate
+    <code>String.IsNullOrWhiteSpace(strQuantity)</code>. If <strong>True</strong>:
+    <ul>
+      <li>Log a Warning: <em>"Order [order_id]: Empty quantity. Applying default of 1."</em></li>
+      <li>Set <code>strQuantity = "1"</code> as a safe business default.</li>
+      <li>This prevents a runtime error and still allows the order to be processed.</li>
+    </ul>
+  </li>
+  <li>
+    <strong>Parse to Integer (Type-Safe):</strong> Use <code>Integer.TryParse(strQuantity, intQuantity)</code>
+    to safely convert to an integer. If the parse fails (e.g., value is "N/A"):
+    <ul>
+      <li>Log Warning and add row to <code>dt_InvalidOrders</code>.</li>
+      <li>Use <code>Continue For</code> to skip to the next row.</li>
+    </ul>
+  </li>
+  <li>
+    <strong>Check for Zero or Negative:</strong> Evaluate <code>intQuantity &lt;= 0</code>. If
+    <strong>True</strong>:
+    <ul>
+      <li>Log Warning: <em>"Order [order_id]: Quantity is zero or negative. Skipping."</em></li>
+      <li>Add row to <code>dt_InvalidOrders</code> for the support team report.</li>
+      <li>Use <code>Continue For</code> to skip — <strong>do not submit</strong> an order with
+          zero quantity.</li>
+    </ul>
+  </li>
+  <li>
+    <strong>Proceed Normally:</strong> If all checks pass (<code>intQuantity &gt; 0</code>),
+    proceed to type the quantity value into the OMS form field.
+  </li>
+</ol>
+
+<pre>
+' ================================================================
+' VB.NET Snippet — Quantity Validation
+' Location: 2_ExtractValidate.xaml — inside For Each Row loop
+' ================================================================
+
+Dim strQuantity As String = If(
+    row("quantity") Is Nothing, "",
+    row("quantity").ToString().Trim()
+)
+Dim intQuantity As Integer = 0
+
+' Check 1: Is the field empty?
+If String.IsNullOrWhiteSpace(strQuantity) Then
+    Log.Warn("Order " &amp; strOrderId &amp; ": Empty quantity. Defaulting to 1.")
+    intQuantity = 1  ' Apply safe business default
+
+' Check 2: Is the value non-numeric?
+ElseIf Not Integer.TryParse(strQuantity, intQuantity) Then
+    Log.Warn("Order " &amp; strOrderId &amp; ": Non-numeric quantity '" &amp;
+             strQuantity &amp; "'. Skipping order.")
+    dt_InvalidOrders.ImportRow(row)
+    Continue For  ' Skip to next row
+
+' Check 3: Is the quantity zero or negative?
+ElseIf intQuantity &lt;= 0 Then
+    Log.Warn("Order " &amp; strOrderId &amp; ": Quantity is " &amp;
+             intQuantity.ToString() &amp; " (zero/negative). Skipping.")
+    dt_InvalidOrders.ImportRow(row)
+    Continue For  ' Skip to next row
+End If
+
+' ✅ intQuantity is valid and > 0 — safe to submit
+' ================================================================
+' Batch 2 Test Results:
+'   Order 1008: quantity = "0"  → Check 3 fails → SKIPPED ✅
+'   Order 1009: quantity = ""   → Check 1 fails → DEFAULT = 1 ✅
+' ================================================================
+</pre>
+
+
+<!-- ===================== TASK 3 ===================== -->
+<div class="page-break"></div>
+<div class="section-label">TASK 3</div>
+<h1>Task 3: Integration and Documentation</h1>
+
+
+<!-- PA0101 -->
+<h2>PA0101 – System Interaction Description</h2>
+<p>
+  The Mzansi Mart RPA solution integrates with four distinct system components. Below is a
+  detailed description of each integration point and the UiPath mechanisms used:
+</p>
+
+<h3>1. Email Client (IMAP/SMTP Integration)</h3>
+<table>
+  <tr><th>Property</th><th>Detail</th></tr>
+  <tr><td>Activity Package</td><td>UiPath.Mail.Activities</td></tr>
+  <tr><td>Protocol (Incoming)</td><td>IMAP (port 993, SSL)</td></tr>
+  <tr><td>Protocol (Outgoing)</td><td>SMTP (port 587, TLS)</td></tr>
+  <tr><td>Incoming Activity</td><td><em>Get IMAP Mail Messages</em> — filters unread emails by subject containing "New Mzansi Mart Order"</td></tr>
+  <tr><td>Attachment Download</td><td><em>Save Mail Attachments</em> — saves the CSV file to <code>C:\MzansiMart\Inbox\</code> with a timestamp in the filename</td></tr>
+  <tr><td>Outgoing Activity</td><td><em>Send SMTP Mail Message</em> — sends (a) confirmation emails to customers and (b) alert emails to rpa-support@mzansimart.co.za</td></tr>
+  <tr><td>Security</td><td>All mail server credentials (host, port, username, password) stored as encrypted Orchestrator Assets — never hardcoded</td></tr>
+</table>
+
+<h3>2. File System Integration</h3>
+<table>
+  <tr><th>Property</th><th>Detail</th></tr>
+  <tr><td>Activity Package</td><td>UiPath.System.Activities</td></tr>
+  <tr><td>Folder Structure</td><td><code>C:\MzansiMart\Inbox\</code> (new files), <code>C:\MzansiMart\Processed\</code> (completed), <code>C:\MzansiMart\Failed\</code> (errors)</td></tr>
+  <tr><td>Create Folder</td><td><em>Create Folder</em> activity ensures staging directories exist on first run</td></tr>
+  <tr><td>Read CSV</td><td><em>Read CSV</em> activity parses the CSV file into a <code>DataTable</code> with headers</td></tr>
+  <tr><td>Archive</td><td><em>Move File</em> activity archives processed CSV to the <code>Processed</code> folder to prevent reprocessing</td></tr>
+  <tr><td>Error Archive</td><td>On failure, <em>Move File</em> moves the CSV to the <code>Failed</code> folder for manual investigation</td></tr>
+</table>
+
+<h3>3. Web Application — Mzansi Mart Order Management System</h3>
+<table>
+  <tr><th>Property</th><th>Detail</th></tr>
+  <tr><td>Activity Package</td><td>UiPath.WebBrowser.Activities (Chrome Extension)</td></tr>
+  <tr><td>Launch</td><td><em>Open Browser</em> — opens Chrome, navigates to https://orders.mzansimart.co.za</td></tr>
+  <tr><td>Data Entry</td><td><em>Type Into</em> — enters username, password, customer_id, product_sku, and quantity fields</td></tr>
+  <tr><td>Button Clicks</td><td><em>Click</em> — triggers Log In, New Order, Add Item, and Submit Order</td></tr>
+  <tr><td>Data Extraction</td><td><em>Get Text</em> — captures the Order Confirmation Number from the success message</td></tr>
+  <tr><td>Reliability Settings</td><td>All activities use <em>WaitForReady = COMPLETE</em> and a 30-second Timeout to handle slow page loads</td></tr>
+  <tr><td>Object Repository</td><td>All UI element descriptors are stored in the UiPath Object Repository for centralised management and resilience</td></tr>
+</table>
+
+<h3>4. Secure Credential Vault — UiPath Orchestrator Assets</h3>
+<table>
+  <tr><th>Property</th><th>Detail</th></tr>
+  <tr><td>Activity</td><td><em>Get Credential</em> (from UiPath.Core.Activities)</td></tr>
+  <tr><td>OMS Credential Asset</td><td>Named: <code>"MzansiMartOMS_Credential"</code> — stores OMS username and password</td></tr>
+  <tr><td>Mail Credential Asset</td><td>Named: <code>"MzansiMart_MailServer_Credential"</code> — stores mail server auth</td></tr>
+  <tr><td>Security</td><td>Assets are encrypted at rest in Orchestrator. The robot only ever holds the credential in memory during execution — never written to disk</td></tr>
+  <tr><td>Failure Handling</td><td>If the credential asset is unavailable (e.g., network issue), a meaningful <em>CredentialNotFoundException</em> is thrown and caught by the Global Exception Handler, triggering an alert email</td></tr>
+</table>
+
+<h3>High-Level Component Interaction Diagram</h3>
+<pre>
+ ┌─────────────────────────────────────────────────────────────────┐
+ │                   MZANSI MART RPA SOLUTION                      │
+ │  ┌──────────────────────────────────────────────────────────┐   │
+ │  │                  UiPath Robot (Main.xaml)                 │   │
+ │  │                                                           │   │
+ │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐  │   │
+ │  │  │  Email   │  │  File    │  │  Web App │  │  Creds  │  │   │
+ │  │  │  Client  │  │  System  │  │  (OMS)   │  │  Vault  │  │   │
+ │  │  └──────────┘  └──────────┘  └──────────┘  └─────────┘  │   │
+ │  └──────────────────────────────────────────────────────────┘   │
+ └─────────────────────────────────────────────────────────────────┘
+        │                │               │              │
+   IMAP/SMTP        Read/Write      HTTP/Chrome     REST API
+   (Mail Server)   (Local Disk)     (Browser)    (Orchestrator)
+</pre>
+
+
+<!-- PA0107 -->
+<h2>PA0107 – Knowledge Base: Out-of-Stock Order Scenario</h2>
+
+<h3>New Test Case: TC_006 — Order for Out-of-Stock Item</h3>
+<table>
+  <tr><th>Field</th><th>Details</th></tr>
+  <tr><td><strong>Test Case ID</strong></td><td>TC_006</td></tr>
+  <tr><td><strong>Test Case Name</strong></td><td>Order Submission — Out-of-Stock Item</td></tr>
+  <tr><td><strong>Module</strong></td><td>4_ProcessOrders.xaml</td></tr>
+  <tr><td><strong>Priority</strong></td><td>High</td></tr>
+  <tr><td><strong>Precondition</strong></td>
+      <td>Bot is logged into OMS. Item "WOODEN-CRAFT" has zero available stock in the OMS inventory database.</td></tr>
+  <tr><td><strong>Test Input Data</strong></td>
+      <td><code>order_id: 9001, customer_id: 55599999, product_sku: WOODEN-CRAFT, quantity: 2</code></td></tr>
+  <tr><td><strong>Test Steps</strong></td>
+      <td>1. Navigate to the "New Order" page.<br>
+          2. Enter customer_id = 55599999.<br>
+          3. Enter product_sku = WOODEN-CRAFT.<br>
+          4. Enter quantity = 2.<br>
+          5. Click the "Add Item" button.<br>
+          6. Observe the OMS response.</td></tr>
+  <tr><td><strong>Expected Result</strong></td>
+      <td>OMS displays an error message containing "out of stock". The bot detects this message,
+          logs a Warning, skips the Submit Order step, and sends an alert email to
+          fulfilment@mzansimart.co.za. The customer is NOT sent a confirmation email.</td></tr>
+  <tr><td><strong>Pass Criteria</strong></td>
+      <td>No order submission occurs. Warning is logged. Alert email is sent. Row is added to
+          the out-of-stock report for manual follow-up.</td></tr>
+  <tr><td><strong>Actual Result</strong></td><td><em>[To be completed during test execution]</em></td></tr>
+  <tr><td><strong>Status</strong></td><td>Pending</td></tr>
+</table>
+
+<h3>Out-of-Stock Handling Script (Pseudocode)</h3>
+<pre>
+' ================================================================
+' Script: Out-of-Stock Handling
+' Location: 4_ProcessOrders.xaml — inside For Each Row loop
+' ================================================================
+
+TRY
+    ' Step 1: Enter order details and click Add Item
+    TypeInto(customer_id_field, strCustomerId)
+    TypeInto(product_sku_field, strProductSku)
+    TypeInto(quantity_field, intQuantity.ToString())
+    Click("Add Item button")
+
+    ' Step 2: Check for out-of-stock error banner on OMS page
+    ' Uses Element Exists with a short timeout (5 seconds)
+    Dim bOutOfStock As Boolean = ElementExists(
+        "&lt;webctrl tag='DIV' class='error-banner' /&gt;",
+        timeout := TimeSpan.FromSeconds(5)
+    )
+
+    ' ALSO check for specific text as a secondary confirmation
+    Dim strBannerText As String = If(bOutOfStock, GetText("error-banner element"), "")
+    bOutOfStock = bOutOfStock AndAlso strBannerText.ToLower().Contains("out of stock")
+
+    IF bOutOfStock = True THEN
+        ' Step 3: Log the out-of-stock event
+        Log.Warn("[OUT OF STOCK] Order " &amp; strOrderId &amp;
+                 ": " &amp; strProductSku &amp; " is out of stock. Order NOT submitted.")
+
+        ' Step 4: Add to out-of-stock report DataTable
+        dt_OutOfStockOrders.ImportRow(currentRow)
+
+        ' Step 5: Send alert to fulfilment team (not RPA support)
+        SendEmail(
+            To: "fulfilment@mzansimart.co.za",
+            Subject: "Out-of-Stock Alert — Order " &amp; strOrderId,
+            Body: "Item: " &amp; strProductSku &amp;
+                  " | Customer: " &amp; strCustomerEmail &amp;
+                  " | Qty Requested: " &amp; intQuantity.ToString()
+        )
+
+        ' Step 6: Skip — do NOT click Submit Order
+        Continue For
+
+    ELSE
+        ' Step 7: Item in stock — proceed to submit
+        Click("Submit Order button")
+        strConfirmationNo = GetText("confirmation number element")
+    END IF
+
+CATCH ex AS SelectorNotFoundException
+    Log.Error("Element not found: " &amp; ex.Message)
+    Throw  ' Re-throw to Global Exception Handler
+END TRY
+</pre>
+
+<h3>Knowledge Base Entry (KNOWLEDGE_BASE.md)</h3>
+<div class="kb-box">## KB-003: Out-of-Stock Order Handling
+**Date Added:** 17 June 2026
+**Discovered By:** Shanon Lutchman
+**Scenario:** A customer places an order for a product_sku that has zero available
+stock in the Mzansi Mart OMS inventory.
+
+**Trigger Condition:** The OMS displays an error banner element (CSS class: .error-banner)
+containing the text "out of stock" after the "Add Item" button is clicked.
+
+**Bot Behaviour:**
+1. Detect error banner using Element Exists activity (5-second timeout).
+2. Log a WARNING with order_id and product_sku details.
+3. Add the affected row to dt_OutOfStockOrders DataTable.
+4. Send an alert email to fulfilment@mzansimart.co.za with order details.
+5. Skip the Submit Order step using Continue For.
+6. Customer does NOT receive a confirmation email for this order.
+
+**Business Rule:** Do NOT submit a partial or out-of-stock order.
+The entire row is skipped and routed to the fulfilment team for manual handling.
+
+**Test Case Reference:** TC_006
+**Related Workflow:** 4_ProcessOrders.xaml (Out-of-Stock Check sequence)
+**Status:** Active
+
+**How to Add to Knowledge Base:**
+- This entry is saved as KNOWLEDGE_BASE.md in the Git repository root.
+- All team members update this file when new exception scenarios are discovered.
+- Changes are committed with a descriptive message: "KB: Added TC_006 out-of-stock handling"
+- The file is reviewed quarterly and linked from the project README.md.
+
+**Future Improvement:** Implement a retry mechanism — automatically re-attempt
+out-of-stock orders after 24 hours (using Orchestrator Queue with SLA settings).</div>
+
+
+<!-- IAC0101 -->
+<h2>IAC0101 – PDD Objects and Processes Extraction</h2>
+<p>
+  The following tables provide a complete extraction of all <strong>Objects</strong> (data
+  entities and system components the bot interacts with) and <strong>Processes</strong>
+  (actions and tasks the bot executes) identified from the Mzansi Mart PDD.
+</p>
+
+<h3>Objects — Data &amp; System Elements</h3>
+<table>
+  <tr>
+    <th>No.</th>
+    <th>Object Name</th>
+    <th>Type</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td><strong>Incoming Email Message</strong></td>
+    <td>Digital Object</td>
+    <td>Email received at orders@mzansimart.co.za with subject containing "New Mzansi Mart Order" — the trigger event for the automation</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>CSV Attachment File</strong></td>
+    <td>File / Data Source</td>
+    <td>The CSV file attached to the trigger email, containing order data columns: order_id, customer_id, product_sku, quantity, and customer email</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><strong>Local File System Folder</strong></td>
+    <td>System Resource</td>
+    <td>Local staging directory where the CSV is downloaded, processed, and archived (Inbox, Processed, and Failed sub-folders)</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><strong>DataTable (In-Memory)</strong></td>
+    <td>Data Structure</td>
+    <td>In-memory UiPath DataTable (dt_Applications) holding parsed CSV rows; split into dt_ValidOrders and dt_InvalidOrders after validation</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td><strong>Web Browser Instance</strong></td>
+    <td>Application Object</td>
+    <td>Chrome browser session opened by the bot to access and interact with the OMS web portal</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td><strong>OMS Login Page</strong></td>
+    <td>Web UI Object</td>
+    <td>Web page at https://orders.mzansimart.co.za with Username field, Password field, and Log In button</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td><strong>OMS New Order Page</strong></td>
+    <td>Web UI Object</td>
+    <td>Web page containing the customer_id, product_sku, and quantity input fields, plus the Add Item and Submit Order buttons</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td><strong>Add Item Button</strong></td>
+    <td>Web UI Element</td>
+    <td>HTML button on the New Order page that registers each order line item</td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td><strong>Submit Order Button</strong></td>
+    <td>Web UI Element</td>
+    <td>HTML button that finalises and submits the complete order to the OMS backend</td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td><strong>Order Confirmation Number</strong></td>
+    <td>Web UI Text / Data</td>
+    <td>Text element displayed on the OMS success page after order submission — captured by the bot and included in the confirmation email</td>
+  </tr>
+  <tr>
+    <td>11</td>
+    <td><strong>Orchestrator Credential Asset</strong></td>
+    <td>Security Object</td>
+    <td>Encrypted credential vault in UiPath Orchestrator storing the OMS login credentials and mail server credentials</td>
+  </tr>
+  <tr>
+    <td>12</td>
+    <td><strong>Outgoing Confirmation Email</strong></td>
+    <td>Digital Object</td>
+    <td>Email sent to the customer upon successful order submission, with subject "Your Mzansi Mart Order is Confirmed" and the Confirmation Number</td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td><strong>Outgoing Alert Email</strong></td>
+    <td>Digital Object</td>
+    <td>Email sent to rpa-support@mzansimart.co.za when any error or exception occurs during the automation run</td>
+  </tr>
+</table>
+
+<h3>Processes — Actions &amp; Tasks Executed by the Bot</h3>
+<table>
+  <tr>
+    <th>No.</th>
+    <th>Process Name</th>
+    <th>Sub-Process File</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td><strong>Monitor Mailbox</strong></td>
+    <td>1_MonitorEmail.xaml</td>
+    <td>Continuously polls the IMAP mailbox, filtering for emails matching the subject trigger</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>Download CSV Attachment</strong></td>
+    <td>1_MonitorEmail.xaml</td>
+    <td>Saves the email attachment to the local staging folder with a unique timestamped filename</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><strong>Read CSV File</strong></td>
+    <td>2_ExtractValidate.xaml</td>
+    <td>Parses the downloaded CSV file into a DataTable using the Read CSV activity</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><strong>Validate customer_id</strong></td>
+    <td>2_ExtractValidate.xaml</td>
+    <td>Checks that each customer_id is exactly 8 numeric digits; routes invalid rows to the error DataTable</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td><strong>Validate Quantity</strong></td>
+    <td>2_ExtractValidate.xaml</td>
+    <td>Checks quantity is non-null, numeric, and greater than zero; applies defaults or skips invalid rows</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td><strong>Retrieve Credentials</strong></td>
+    <td>3_LoginOMS.xaml</td>
+    <td>Fetches the OMS username and password securely from the Orchestrator Credential Asset at runtime</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td><strong>Open Web Browser</strong></td>
+    <td>3_LoginOMS.xaml</td>
+    <td>Launches Chrome and navigates to the OMS URL (https://orders.mzansimart.co.za)</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td><strong>Log In to OMS</strong></td>
+    <td>3_LoginOMS.xaml</td>
+    <td>Types credentials into the login form and clicks the Log In button to authenticate</td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td><strong>Navigate to New Order Page</strong></td>
+    <td>4_ProcessOrders.xaml</td>
+    <td>Clicks the "New Order" navigation link in the OMS portal for each order being processed</td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td><strong>Enter customer_id</strong></td>
+    <td>4_ProcessOrders.xaml</td>
+    <td>Types the validated customer_id value into the corresponding OMS form field</td>
+  </tr>
+  <tr>
+    <td>11</td>
+    <td><strong>Enter product_sku</strong></td>
+    <td>4_ProcessOrders.xaml</td>
+    <td>Types the product_sku value from the CSV row into the OMS product field</td>
+  </tr>
+  <tr>
+    <td>12</td>
+    <td><strong>Enter Quantity</strong></td>
+    <td>4_ProcessOrders.xaml</td>
+    <td>Types the validated integer quantity value into the OMS quantity field</td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td><strong>Click Add Item</strong></td>
+    <td>4_ProcessOrders.xaml</td>
+    <td>Clicks the "Add Item" button to register the current line item to the order</td>
+  </tr>
+  <tr>
+    <td>14</td>
+    <td><strong>Click Submit Order</strong></td>
+    <td>4_ProcessOrders.xaml</td>
+    <td>Clicks the "Submit Order" button to finalise the complete order in the OMS</td>
+  </tr>
+  <tr>
+    <td>15</td>
+    <td><strong>Capture Confirmation Number</strong></td>
+    <td>4_ProcessOrders.xaml</td>
+    <td>Uses Get Text activity to extract the Order Confirmation Number from the OMS success screen</td>
+  </tr>
+  <tr>
+    <td>16</td>
+    <td><strong>Send Confirmation Email</strong></td>
+    <td>5_SendConfirmation.xaml</td>
+    <td>Sends a success email to the customer's email address from the CSV, including the Confirmation Number</td>
+  </tr>
+  <tr>
+    <td>17</td>
+    <td><strong>Log Error</strong></td>
+    <td>ErrorHandler.xaml</td>
+    <td>Records full exception details to UiPath Orchestrator logs at Error severity level</td>
+  </tr>
+  <tr>
+    <td>18</td>
+    <td><strong>Send Alert Email</strong></td>
+    <td>ErrorHandler.xaml</td>
+    <td>Sends an alert email to rpa-support@mzansimart.co.za with the full error message and context when any exception occurs</td>
+  </tr>
+  <tr>
+    <td>19</td>
+    <td><strong>Archive CSV File</strong></td>
+    <td>Main.xaml</td>
+    <td>Moves the processed CSV file to the Processed or Failed folder to prevent reprocessing and maintain an audit trail</td>
+  </tr>
+</table>
+
+
+<!-- ===================== FOOTER ===================== -->
+<hr>
+<p style="text-align:center; font-size:9pt; color:#888;">
+  PM-04-PS01 Student Worksheet Solutions &nbsp;|&nbsp; Shanon Lutchman &nbsp;|&nbsp;
+  UiPath Studio Community Edition &nbsp;|&nbsp; June 2026
+</p>
+
+</body>
+</html>
